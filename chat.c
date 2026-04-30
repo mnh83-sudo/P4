@@ -169,8 +169,6 @@ int read_exact(int fd, char *buf, int want) {
 int parse_message(int fd, char type_out[4], char *fields[], int max_fields, char **body_out) {
     *body_out = NULL;
 
-    /* ── read header byte by byte until we have "1|XXX|NNNNN|" ── */
-    /* We expect:  '1' '|' t t t '|' d... d '|'  */
     char header[32];
     int  hlen = 0;
 

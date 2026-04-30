@@ -1,10 +1,10 @@
 CC     = gcc
 CFLAGS = -Wall -Wextra -g -pthread
 
-all: chatd
+all: chat
 
-chatd: chatd.c
-	$(CC) $(CFLAGS) -o chatd chatd.c
+chat: chat.c
+	$(CC) $(CFLAGS) -o chat chat.c
 
 clean:
-	rm -f chatd
+	rm -f chat
