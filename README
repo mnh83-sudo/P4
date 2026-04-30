@@ -8,14 +8,14 @@ Build:
   make
 
 Run:
-  ./chatd <port>
+  ./chat <port>
 
 Example:
-  ./chatd 9000
+  ./chat 9000
 
 Design
 ---------------------
-chatd uses one thread per connected client (pthreads).
+chat uses one thread per connected client (pthreads).
 A global linked list (head) stores all connected account_user structs.
 All accesses to the list are protected by clients_mutex.
 
@@ -33,86 +33,80 @@ Each message type has its own handler:
 
 Testing:
 ------------------------
-1. BASIC CONNECTION AND NAM
+ BASIC CONNECTION AND NAM
    - Connect with netcat:  nc localhost 9000
    - Send:  1|NAM|4|Bob|
    - Expect welcome MSG back
    - Send same name from a second terminal
    - Expect ERR code 1 (name in use)
 
-2. ILLEGAL NAME CHARACTERS
+ ILLEGAL NAME CHARACTERS
    - Send:  1|NAM|5|Bo b!|   (space and exclamation mark are illegal)
    - Expect ERR code 3
 
-3. NAME TOO LONG
+ NAME TOO LONG
    - Send a NAM with a 33-character name
    - Expect ERR code 4
 
-4. STATUS (SET)
+ STATUS (SET)
    - After logging in as Bob, send:  1|SET|17|Smiling politely|
    - Expect broadcast MSG:  Bob is now "Smiling politely"
    - Send WHO query for Bob from another client
    - Expect:  Bob: Smiling politely
 
-5. WHO – SINGLE USER
+ WHO – SINGLE USER
    - Connect two clients (Bob and Alice)
    - Bob sends:  1|WHO|6|Alice|
    - Expect MSG from #all to Bob with Alice's status or "No status"
-
-6. WHO – ROOM
+  
+  WHO – ROOM
    - Bob sends:  1|WHO|5|#all|
    - Expect a MSG listing all connected users with statuses
 
-7. WHO – UNKNOWN USER
+  WHO – UNKNOWN USER
    - Bob sends:  1|WHO|6|Carol|  (Carol not connected)
    - Expect ERR code 2
-
-8. MSG TO #all (BROADCAST)
+ 
+ MSG TO #all (BROADCAST)
    - Bob sends:  1|MSG|20||#all|Hello, world!|
    - All connected clients should receive:
        1|MSG|23|Bob|#all|Hello, world!|
-
-9. MSG – PRIVATE
+ 
+ MSG – PRIVATE
    - Bob sends:  1|MSG|28||Alice|Private message to Alice|
    - Only Alice receives the forwarded message
    - Bob does NOT receive a copy
 
-10. MSG – UNKNOWN RECIPIENT
+ MSG – UNKNOWN RECIPIENT
     - Bob sends a MSG to Carol who is not connected
     - Expect ERR code 2
 
-11. MSG TOO LONG
+ MSG TOO LONG
     - Send a message body exceeding 80 characters
     - Expect ERR code 4
 
-12. MSG – ILLEGAL CHARACTER
+ MSG – ILLEGAL CHARACTER
     - Include a byte below 32 in the message body
     - Expect ERR code 3
 
-13. DISCONNECT CLEANUP
+ DISCONNECT CLEANUP
     - Connect three clients; disconnect one
     - Run WHO #all from a remaining client
     - Disconnected client should no longer appear
 
-14. CONCURRENT CLIENTS
+ CONCURRENT CLIENTS
     - Open 5+ terminals all connected at once
     - Broadcast from one; verify all others receive it
     - This stress-tests mutex correctness
 
-15. MALFORMED PROTOCOL (ERR 0 / fatal)
+ MALFORMED PROTOCOL (ERR 0 / fatal)
     - Send a message with wrong version number:  2|NAM|4|Bob|
     - Expect ERR code 0 and connection closed by server
     - Send a body without a trailing |
     - Expect ERR code 0 and connection closed
 
-16. MSG BEFORE NAM
+ MSG BEFORE NAM
     - Try sending MSG before NAM
     - Expect ERR code 0 (must set name first)
 
---------------------------------------------------
-HOW WE TESTED
---------------------------------------------------
-Manual testing was done using netcat (nc) in multiple terminals.
-We typed protocol messages by hand to verify each scenario above.
-We also wrote a small shell script to automate the basic NAM +
-broadcast sequence across three parallel nc sessions.
+
